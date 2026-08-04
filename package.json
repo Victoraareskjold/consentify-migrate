@@ -15,10 +15,10 @@
   "homepage": "https://consentify.app/migrate",
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/consentify/consentify-migrate.git"
+    "url": "git+https://github.com/Victoraareskjold/consentify-migrate.git"
   },
   "bugs": {
-    "url": "https://github.com/consentify/consentify-migrate/issues"
+    "url": "https://github.com/Victoraareskjold/consentify-migrate/issues"
   },
   "author": "Victor Aareskjold",
   "license": "MIT",

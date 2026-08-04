@@ -154,7 +154,7 @@ The script goes where it actually belongs, not just anywhere.
 | WordPress              | Theme `header.php` before `wp_head()` |
 | Vanilla HTML           | `index.html` before `</body>`     |
 
-**Your framework missing, or detection got it wrong?** [Open an issue](https://github.com/consentify/consentify-migrate/issues/new?template=detection.yml). That's the single most useful thing you can contribute.
+**Your framework missing, or detection got it wrong?** [Open an issue](https://github.com/Victoraareskjold/consentify-migrate/issues/new?template=detection.yml). That's the single most useful thing you can contribute.
 
 ---
 
