@@ -1,6 +1,6 @@
 {
   "name": "consentify-migrate",
-  "version": "2.2.0",
+  "version": "2.3.0",
   "description": "Migrate to Consentify. Removes Cookiebot and tracking scripts, detects integrations, sets up your Consentify domains, and commits the changes. Works on a single project or a whole folder of client sites at once.",
   "keywords": [
     "cookiebot",
