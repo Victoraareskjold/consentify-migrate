@@ -41,3 +41,13 @@ export function normalizeDomain(input: string): string {
 export function looksLikeDomain(s: string): boolean {
   return /^[a-z0-9-]+(\.[a-z0-9-]+)+$/i.test(s.trim());
 }
+
+/**
+ * Join a list for display, capped so a run over 100 projects stays readable.
+ * Full detail always lands in the report file, so nothing is lost here.
+ */
+export function brief(items: string[], max = 3): string {
+  if (items.length === 0) return "none";
+  if (items.length <= max) return items.join(", ");
+  return `${items.slice(0, max).join(", ")} +${items.length - max} more`;
+}

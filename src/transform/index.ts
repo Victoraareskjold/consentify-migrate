@@ -16,9 +16,7 @@ export interface TransformResult {
 
 // Canonical host (apex redirects to www; avoid a redirect hop on every load).
 // Override for local testing, e.g. CONSENTIFY_SCRIPT_HOST=http://localhost:3000
-const SCRIPT_HOST = (
-  process.env.CONSENTIFY_SCRIPT_HOST ?? "https://www.consentify.app"
-).replace(/\/$/, "");
+const SCRIPT_HOST = "https://www.consentify.app".replace(/\/$/, "");
 
 const GATEWAY_URL = (token: string) =>
   `${SCRIPT_HOST}/api/gateway?token=${token}`;
@@ -48,7 +46,9 @@ const CMP_INLINE_RE = CMP_PATTERNS.inline.length
 
 /** True when a single <script> block belongs to a known CMP. */
 function blockIsCmp(block: string): boolean {
-  return (CMP_SRC_RE?.test(block) ?? false) || (CMP_INLINE_RE?.test(block) ?? false);
+  return (
+    (CMP_SRC_RE?.test(block) ?? false) || (CMP_INLINE_RE?.test(block) ?? false)
+  );
 }
 
 /**
@@ -57,9 +57,24 @@ function blockIsCmp(block: string): boolean {
  * shared block stripper below.
  */
 function removeCmpNonScript(content: string): string {
-  const wpSlugs = ["cookiebot", "onetrust", "cookieyes", "cookiefirst", "iubenda", "complianz", "borlabs", "usercentrics", "termly", "osano", "cookie-?script"];
+  const wpSlugs = [
+    "cookiebot",
+    "onetrust",
+    "cookieyes",
+    "cookiefirst",
+    "iubenda",
+    "complianz",
+    "borlabs",
+    "usercentrics",
+    "termly",
+    "osano",
+    "cookie-?script",
+  ];
   content = content.replace(
-    new RegExp(`^\\s*wp_enqueue_script\\([^)]*(?:${wpSlugs.join("|")})[^)]*\\);\\s*\\n`, "gim"),
+    new RegExp(
+      `^\\s*wp_enqueue_script\\([^)]*(?:${wpSlugs.join("|")})[^)]*\\);\\s*\\n`,
+      "gim",
+    ),
     "",
   );
 
@@ -148,7 +163,11 @@ export function stripTrackingFromFile(filePath: string): TransformResult {
   try {
     content = readFileSync(filePath, "utf-8");
   } catch {
-    return { file: filePath, changed: false, description: "Unreadable, skipped" };
+    return {
+      file: filePath,
+      changed: false,
+      description: "Unreadable, skipped",
+    };
   }
 
   const original = content;
@@ -192,7 +211,11 @@ function injectIntoHtml(
 ): TransformResult {
   let content = readFileSync(filePath, "utf-8");
   if (alreadyHasConsentify(content)) {
-    return { file: filePath, changed: false, description: "Consentify already present" };
+    return {
+      file: filePath,
+      changed: false,
+      description: "Consentify already present",
+    };
   }
 
   const tag = `  <script async src="${GATEWAY_URL(token)}"></script>`;
@@ -211,7 +234,11 @@ function injectIntoHtml(
   }
 
   if (content === original) {
-    return { file: filePath, changed: false, description: "No injection point found" };
+    return {
+      file: filePath,
+      changed: false,
+      description: "No injection point found",
+    };
   }
   writeFileSync(filePath, content, "utf-8");
   return {
@@ -255,7 +282,11 @@ function injectNextAppLayout(filePath: string, token: string): TransformResult {
     };
   }
   if (alreadyHasConsentify(content)) {
-    return { file: filePath, changed: false, description: "Consentify already present" };
+    return {
+      file: filePath,
+      changed: false,
+      description: "Consentify already present",
+    };
   }
 
   const tag = `        <Script async src="${GATEWAY_URL(token)}"></Script>`;
@@ -272,7 +303,9 @@ function injectNextAppLayout(filePath: string, token: string): TransformResult {
   };
 }
 
-const NEXT_DOCUMENT_TEMPLATE = (token: string) => `import { Html, Head, Main, NextScript } from "next/document";
+const NEXT_DOCUMENT_TEMPLATE = (
+  token: string,
+) => `import { Html, Head, Main, NextScript } from "next/document";
 import Script from "next/script";
 
 export default function Document() {
@@ -304,7 +337,11 @@ function injectNextPages(
     const abs = join(projectDir, documentFile);
     let content = readFileSync(abs, "utf-8");
     if (alreadyHasConsentify(content)) {
-      return { file: abs, changed: false, description: "Consentify already present" };
+      return {
+        file: abs,
+        changed: false,
+        description: "Consentify already present",
+      };
     }
     const tag = `        <Script async src="${GATEWAY_URL(token)}"></Script>`;
     if (/<\/body>/i.test(content)) {
@@ -312,11 +349,19 @@ function injectNextPages(
     } else if (/<NextScript\s*\/>/i.test(content)) {
       content = content.replace(/(<NextScript\s*\/>)/i, `$1\n${tag}`);
     } else {
-      return { file: abs, changed: false, description: "Could not find <body>/<NextScript> in _document" };
+      return {
+        file: abs,
+        changed: false,
+        description: "Could not find <body>/<NextScript> in _document",
+      };
     }
     content = ensureNextScriptImport(content);
     writeFileSync(abs, content, "utf-8");
-    return { file: abs, changed: true, description: "Added Consentify <Script> to _document" };
+    return {
+      file: abs,
+      changed: true,
+      description: "Added Consentify <Script> to _document",
+    };
   }
 
   // No _document — create one. Detect whether the project uses a src/ dir.
@@ -335,7 +380,9 @@ function injectNextPages(
 
 // ─── Nuxt injector (generate a client plugin) ─────────────────────────────────────
 
-const NUXT_PLUGIN_TEMPLATE = (token: string) => `// Auto-generated by consentify-migrate.
+const NUXT_PLUGIN_TEMPLATE = (
+  token: string,
+) => `// Auto-generated by consentify-migrate.
 // Loads the Consentify consent banner on the client.
 export default defineNuxtPlugin(() => {
   useHead({
@@ -356,7 +403,11 @@ function injectNuxtPlugin(projectDir: string, token: string): TransformResult {
   if (existsSync(abs)) {
     const content = readFileSync(abs, "utf-8");
     if (alreadyHasConsentify(content)) {
-      return { file: abs, changed: false, description: "Consentify plugin already present" };
+      return {
+        file: abs,
+        changed: false,
+        description: "Consentify plugin already present",
+      };
     }
   }
   mkdirSync(dirname(abs), { recursive: true });
@@ -374,23 +425,42 @@ function injectNuxtPlugin(projectDir: string, token: string): TransformResult {
 function injectAstroLayout(filePath: string, token: string): TransformResult {
   let content = readFileSync(filePath, "utf-8");
   if (alreadyHasConsentify(content)) {
-    return { file: filePath, changed: false, description: "Consentify already present" };
+    return {
+      file: filePath,
+      changed: false,
+      description: "Consentify already present",
+    };
   }
   if (!/<\/head>/i.test(content)) {
-    return { file: filePath, changed: false, description: "No <head> in layout, skipped" };
+    return {
+      file: filePath,
+      changed: false,
+      description: "No <head> in layout, skipped",
+    };
   }
   const tag = `    <script async src="${GATEWAY_URL(token)}" is:inline></script>`;
   content = content.replace(/([ \t]*)<\/head>/i, `${tag}\n$1</head>`);
   writeFileSync(filePath, content, "utf-8");
-  return { file: filePath, changed: true, description: "Added Consentify <script> to Astro layout <head>" };
+  return {
+    file: filePath,
+    changed: true,
+    description: "Added Consentify <script> to Astro layout <head>",
+  };
 }
 
 // ─── WordPress injector ───────────────────────────────────────────────────────────
 
-function injectWordpressHeader(filePath: string, token: string): TransformResult {
+function injectWordpressHeader(
+  filePath: string,
+  token: string,
+): TransformResult {
   let content = readFileSync(filePath, "utf-8");
   if (alreadyHasConsentify(content)) {
-    return { file: filePath, changed: false, description: "Consentify already present" };
+    return {
+      file: filePath,
+      changed: false,
+      description: "Consentify already present",
+    };
   }
   const tag = `<script async src="${GATEWAY_URL(token)}"></script>`;
 
@@ -403,10 +473,18 @@ function injectWordpressHeader(filePath: string, token: string): TransformResult
   } else if (/<\/head>/i.test(content)) {
     content = content.replace(/<\/head>/i, `${tag}\n</head>`);
   } else {
-    return { file: filePath, changed: false, description: "No wp_head()/</head> found" };
+    return {
+      file: filePath,
+      changed: false,
+      description: "No wp_head()/</head> found",
+    };
   }
   writeFileSync(filePath, content, "utf-8");
-  return { file: filePath, changed: true, description: "Added Consentify <script> to header.php" };
+  return {
+    file: filePath,
+    changed: true,
+    description: "Added Consentify <script> to header.php",
+  };
 }
 
 // ─── Orchestrator ─────────────────────────────────────────────────────────────────
@@ -426,7 +504,13 @@ export function injectConsentify(
   switch (framework) {
     case "nextjs-app": {
       if (!entryFiles.length) {
-        return [{ file: projectDir, changed: false, description: "No root layout found" }];
+        return [
+          {
+            file: projectDir,
+            changed: false,
+            description: "No root layout found",
+          },
+        ];
       }
       return [injectNextAppLayout(abs(entryFiles[0]), token)];
     }
@@ -436,19 +520,37 @@ export function injectConsentify(
       return [injectNuxtPlugin(projectDir, token)];
     case "sveltekit": {
       if (!entryFiles.length) {
-        return [{ file: projectDir, changed: false, description: "No src/app.html found" }];
+        return [
+          {
+            file: projectDir,
+            changed: false,
+            description: "No src/app.html found",
+          },
+        ];
       }
       return [injectIntoHtml(abs(entryFiles[0]), token, "body")];
     }
     case "astro": {
       if (!entryFiles.length) {
-        return [{ file: projectDir, changed: false, description: "No Astro layout with <head> found" }];
+        return [
+          {
+            file: projectDir,
+            changed: false,
+            description: "No Astro layout with <head> found",
+          },
+        ];
       }
       return [injectAstroLayout(abs(entryFiles[0]), token)];
     }
     case "wordpress": {
       if (!entryFiles.length) {
-        return [{ file: projectDir, changed: false, description: "No theme header.php found" }];
+        return [
+          {
+            file: projectDir,
+            changed: false,
+            description: "No theme header.php found",
+          },
+        ];
       }
       return [injectWordpressHeader(abs(entryFiles[0]), token)];
     }
@@ -456,14 +558,26 @@ export function injectConsentify(
     case "svelte":
     case "angular": {
       if (!entryFiles.length) {
-        return [{ file: projectDir, changed: false, description: "No index.html found" }];
+        return [
+          {
+            file: projectDir,
+            changed: false,
+            description: "No index.html found",
+          },
+        ];
       }
       return [injectIntoHtml(abs(entryFiles[0]), token, "head")];
     }
     case "react":
     case "html": {
       if (!entryFiles.length) {
-        return [{ file: projectDir, changed: false, description: "No index.html found" }];
+        return [
+          {
+            file: projectDir,
+            changed: false,
+            description: "No index.html found",
+          },
+        ];
       }
       return [injectIntoHtml(abs(entryFiles[0]), token, "body")];
     }

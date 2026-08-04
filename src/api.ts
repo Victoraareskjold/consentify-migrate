@@ -8,9 +8,7 @@ const SUPABASE_PUBLISHABLE_KEY =
 // browsers/Node strip the Authorization header across that origin change, which
 // breaks token-authenticated calls (capacity, scan). Point straight at www.
 // Override for local testing, e.g. CONSENTIFY_API_BASE=http://localhost:3000
-const API_BASE = (
-  process.env.CONSENTIFY_API_BASE ?? "https://www.consentify.app"
-).replace(/\/$/, "");
+const API_BASE = "https://www.consentify.app".replace(/\/$/, "");
 
 export interface Team {
   id: string;
@@ -166,7 +164,8 @@ export async function pollCliAuth(
   while (Date.now() < deadline) {
     const res = await fetch(pollUrl);
 
-    if (res.status === 410) throw new Error("Login expired — please try again.");
+    if (res.status === 410)
+      throw new Error("Login expired — please try again.");
 
     if (res.ok) {
       const body = (await res.json()) as {

@@ -56,6 +56,8 @@ export interface ProjectResult {
   /** Files where an existing CMP was found (and removed). */
   cmpFiles: string[];
   changedFiles: string[];
+  /** True when the Consentify tag was actually written into an entry file. */
+  injected?: boolean;
   git?: GitResult;
   scanError?: string;
   error?: string;
@@ -117,6 +119,21 @@ export async function processProject(
     cmpFiles: [],
     changedFiles: [],
   };
+
+  // ── Refuse to touch anything we can't finish ──────────────────────────────
+  // Stripping trackers without injecting the Consentify tag leaves a site with
+  // no analytics AND no consent gate, which is strictly worse than not running.
+  // The "unknown" framework globs **/* and has no entry file, so without this
+  // guard a run from the wrong directory quietly rewrites every project below it.
+  if (framework.type === "unknown" && framework.entryFiles.length === 0) {
+    return {
+      ...base,
+      status: "error",
+      error:
+        "No framework or entry point detected here. Run this from a project root, " +
+        "or use `bulk` to set up a folder of projects.",
+    };
+  }
 
   // ── Scan project files (Cookiebot + policy path + code-level integrations) ──
   let files: string[];
@@ -265,6 +282,10 @@ export async function processProject(
   }
 
   base.changedFiles = [...changed].map((f) => relative(projectDir, f));
+
+  // If nothing was injected, the tag never landed. Say so loudly instead of
+  // reporting "Updated files" for a set of files we only stripped.
+  base.injected = injectResults.some((r) => r.changed);
 
   // ── Git ───────────────────────────────────────────────────────────────────
   if (ctx.gitMode !== "none") {
