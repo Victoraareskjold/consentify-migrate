@@ -374,6 +374,7 @@ async function main() {
       accessToken,
       teamId,
       gitMode: args.gitMode,
+      gitExplicit: args.gitExplicit,
       dryRun: args.dryRun,
       yes: args.yes,
       useScanner: args.useScanner,

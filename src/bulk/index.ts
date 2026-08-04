@@ -1,7 +1,7 @@
 import { readdirSync, statSync, existsSync } from "fs";
 import { basename, join, relative } from "path";
 import { execFileSync } from "child_process";
-import { input, confirm } from "@inquirer/prompts";
+import { input, confirm, select } from "@inquirer/prompts";
 import chalk from "chalk";
 import ora from "ora";
 
@@ -31,7 +31,9 @@ export interface BulkOptions {
   yes: boolean;
   useScanner: boolean;
   manifestPath?: string;
-  policyPattern?: string; // e.g. "https://{domain}/personvern"
+  policyPattern?: string; // e.g. "https://{domain}/privacy"
+  /** True when git mode came from a flag, so we skip the interactive prompt. */
+  gitExplicit?: boolean;
 }
 
 interface Candidate {
@@ -222,16 +224,30 @@ export async function runBulk(
   if (!opts.yes && !opts.dryRun) {
     console.log();
     const go = await confirm({
-      message: `Set up Consentify on ${chalk.bold(String(toProcess.length))} project(s)${
-        opts.gitMode !== "none"
-          ? ` and ${opts.gitMode === "commit" ? "commit" : "commit + push"} changes`
-          : ""
-      }?`,
+      message: `Set up Consentify on ${chalk.bold(
+        String(toProcess.length),
+      )} project(s)?`,
       default: true,
     });
     if (!go) {
       warn("Aborted.");
       return;
+    }
+
+    // Git is its own decision. Bundled into the confirm above, declining the
+    // push also meant declining the whole run.
+    if (!opts.gitExplicit) {
+      opts.gitMode = await select<GitMode>({
+        message: "How should I handle git?",
+        choices: [
+          {
+            name: "Commit on a new branch and push (recommended)",
+            value: "branch",
+          },
+          { name: "Just edit the files, I'll commit myself", value: "none" },
+        ],
+        default: "branch",
+      });
     }
   }
 
