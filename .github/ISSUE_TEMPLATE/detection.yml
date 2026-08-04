@@ -1,0 +1,61 @@
+name: Detection problem
+description: The tool misidentified your framework, missed a CMP, or put the script in the wrong place
+title: "[detection] "
+labels: ["detection"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thanks for reporting. Detection bugs are the most useful issues this project gets, and they are usually a small fix.
+  - type: dropdown
+    id: what
+    attributes:
+      label: What went wrong?
+      options:
+        - Wrong framework detected
+        - Framework not detected at all
+        - Existing CMP was not removed
+        - Script was injected in the wrong place
+        - A tracker was missed
+        - Something that should not have been touched was removed
+        - Other
+    validations:
+      required: true
+  - type: input
+    id: framework
+    attributes:
+      label: Framework and version
+      placeholder: "Next.js 15, App Router"
+    validations:
+      required: true
+  - type: textarea
+    id: structure
+    attributes:
+      label: Relevant project structure
+      description: The files and folders around your entry point. No need to paste the whole tree.
+      render: text
+      placeholder: |
+        src/
+          app/
+            layout.tsx
+            page.tsx
+        next.config.mjs
+    validations:
+      required: true
+  - type: textarea
+    id: output
+    attributes:
+      label: Output from `npx consentify-migrate --dry-run`
+      render: text
+    validations:
+      required: true
+  - type: input
+    id: version
+    attributes:
+      label: Version
+      placeholder: "2.2.0"
+  - type: input
+    id: node
+    attributes:
+      label: Node version
+      placeholder: "20.11.0"

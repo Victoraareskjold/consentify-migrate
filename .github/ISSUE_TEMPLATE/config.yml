@@ -1,0 +1,8 @@
+blank_issues_enabled: true
+contact_links:
+  - name: Consentify support
+    url: https://consentify.app
+    about: Questions about the Consentify platform itself, billing, or your account
+  - name: Documentation
+    url: https://consentify.app/docs
+    about: Setup guides and integration docs

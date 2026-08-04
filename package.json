@@ -1,0 +1,53 @@
+{
+  "name": "consentify-migrate",
+  "version": "2.2.0",
+  "description": "Migrate to Consentify. Removes Cookiebot and tracking scripts, detects integrations, sets up your Consentify domains, and commits the changes. Works on a single project or a whole folder of client sites at once.",
+  "keywords": [
+    "cookiebot",
+    "consentify",
+    "cookie-consent",
+    "gdpr",
+    "cmp",
+    "consent-management",
+    "migration",
+    "cli"
+  ],
+  "homepage": "https://consentify.app/migrate",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/consentify/consentify-migrate.git"
+  },
+  "bugs": {
+    "url": "https://github.com/consentify/consentify-migrate/issues"
+  },
+  "author": "Victor Aareskjold",
+  "license": "MIT",
+  "bin": {
+    "consentify-migrate": "./dist/index.cjs"
+  },
+  "scripts": {
+    "build": "esbuild src/index.ts --bundle --platform=node --target=node18 --format=cjs --banner:js='#!/usr/bin/env node' --outfile=dist/index.cjs && chmod +x dist/index.cjs",
+    "dev": "tsx src/index.ts",
+    "typecheck": "tsc --noEmit",
+    "prepublishOnly": "npm run build"
+  },
+  "files": [
+    "dist"
+  ],
+  "engines": {
+    "node": ">=18"
+  },
+  "devDependencies": {
+    "@types/node": "^20",
+    "esbuild": "^0.20.2",
+    "tsx": "^4",
+    "typescript": "^5"
+  },
+  "dependencies": {
+    "@inquirer/prompts": "^7",
+    "@supabase/supabase-js": "^2",
+    "chalk": "^5",
+    "glob": "^11",
+    "ora": "^8"
+  }
+}
