@@ -199,7 +199,7 @@ export function detectFramework(cwd: string): FrameworkResult {
         label: "SvelteKit",
         searchGlobs: jsGlobs,
         entryFiles: firstExisting(cwd, ["src/app.html"]),
-        placement: "src/app.html (before </body>)",
+        placement: "src/app.html (inside %sveltekit.head%)",
       };
     }
 
@@ -279,7 +279,7 @@ export function detectFramework(cwd: string): FrameworkResult {
           "public/index.html",
           "index.html",
         ]),
-        placement: "index.html (before </body>)",
+        placement: "index.html (inside <head>)",
       };
     }
   }
@@ -313,7 +313,7 @@ export function detectFramework(cwd: string): FrameworkResult {
       label: "HTML",
       searchGlobs: ["**/*.html"],
       entryFiles: htmlEntry,
-      placement: "index.html (before </body>)",
+      placement: "index.html (inside <head>)",
     };
   }
 

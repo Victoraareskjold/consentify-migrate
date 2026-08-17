@@ -8,7 +8,11 @@ import {
   mergeIntegrations,
 } from "./detect/integrations.js";
 import { detectPrivacyPath, resolvePolicyUrl } from "./detect/policy.js";
-import { stripTrackingFromFile, injectConsentify } from "./transform/index.js";
+import {
+  stripTrackingFromFile,
+  injectConsentify,
+  rewriteEmbedsInFile,
+} from "./transform/index.js";
 import { classifyTracker } from "./detect/trackers.js";
 import { commitAndPush, type GitMode, type GitResult } from "./git/index.js";
 import { setupDomain, scanDomain, type DetectedTracker } from "./api.js";
@@ -56,6 +60,12 @@ export interface ProjectResult {
   /** Files where an existing CMP was found (and removed). */
   cmpFiles: string[];
   changedFiles: string[];
+  /**
+   * Third-party embeds gated with data-csfy-src, by display name. Worth showing
+   * separately from changedFiles: it is the one change that alters markup the
+   * customer wrote by hand, so they should see exactly what was touched.
+   */
+  gatedEmbeds?: string[];
   /** True when the Consentify tag was actually written into an entry file. */
   injected?: boolean;
   git?: GitResult;
@@ -118,6 +128,7 @@ export async function processProject(
     detectedCmps: [],
     cmpFiles: [],
     changedFiles: [],
+    gatedEmbeds: [],
   };
 
   // ── Refuse to touch anything we can't finish ──────────────────────────────
@@ -256,10 +267,20 @@ export async function processProject(
   // ── Strip trackers from every scanned file ────────────────────────────────
   const changed = new Set<string>();
   const removedTrackerIds = new Set<string>();
+  const gatedEmbeds = new Set<string>();
   for (const f of files) {
     const r = stripTrackingFromFile(f);
     if (r.changed) changed.add(f);
     for (const id of r.removedTrackerIds ?? []) removedTrackerIds.add(id);
+
+    // Third-party embeds the customer pasted in themselves. Unlike trackers
+    // these are not removed and re-injected, because there is no key to hand
+    // over and nothing for Consentify to rebuild. The address moves into
+    // data-csfy-src instead, which is the only way to stop the browser
+    // fetching it during parsing, and the banner puts it back after consent.
+    const e = rewriteEmbedsInFile(f);
+    if (e.changed) changed.add(f);
+    for (const name of e.rewrittenEmbeds ?? []) gatedEmbeds.add(name);
   }
 
   // Trackers we removed from the code that aren't built-in integrations. They
@@ -281,6 +302,7 @@ export async function processProject(
     if (r.changed) changed.add(r.file);
   }
 
+  base.gatedEmbeds = [...gatedEmbeds];
   base.changedFiles = [...changed].map((f) => relative(projectDir, f));
 
   // If nothing was injected, the tag never landed. Say so loudly instead of

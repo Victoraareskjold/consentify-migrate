@@ -12,6 +12,8 @@ export interface TransformResult {
   removedTrackerIds?: string[];
   /** True when a brand-new file was created (vs. an existing one edited). */
   created?: boolean;
+  /** Display names of third-party embeds gated with data-csfy-src in this file. */
+  rewrittenEmbeds?: string[];
 }
 
 // Canonical host (apex redirects to www; avoid a redirect hop on every load).
@@ -289,9 +291,13 @@ function injectNextAppLayout(filePath: string, token: string): TransformResult {
     };
   }
 
-  const tag = `        <Script async src="${GATEWAY_URL(token)}"></Script>`;
+  const tag = `        <Script src="${GATEWAY_URL(token)}" strategy="beforeInteractive"></Script>`;
 
-  // Insert just before </body> so it lives inside the body, per Next.js docs.
+  // Stays in the root layout's <body> in the JSX, which is where the Next.js
+  // docs put it. The strategy is what matters: scripts with beforeInteractive
+  // are always injected inside the <head> of the HTML document regardless of
+  // where they sit in the component. afterInteractive, the default, is injected
+  // client side after hydration, which is later than the bottom of the body.
   content = content.replace(/([ \t]*)<\/body>/i, `\n${tag}\n$1</body>`);
   content = ensureNextScriptImport(content);
 
@@ -299,7 +305,7 @@ function injectNextAppLayout(filePath: string, token: string): TransformResult {
   return {
     file: filePath,
     changed: true,
-    description: "Added Consentify <Script> to root layout <body>",
+    description: "Added Consentify <Script> (beforeInteractive) to root layout",
   };
 }
 
@@ -315,7 +321,7 @@ export default function Document() {
       <body>
         <Main />
         <NextScript />
-        <Script async src="${GATEWAY_URL(token)}"></Script>
+        <Script src="${GATEWAY_URL(token)}" strategy="beforeInteractive"></Script>
       </body>
     </Html>
   );
@@ -343,7 +349,7 @@ function injectNextPages(
         description: "Consentify already present",
       };
     }
-    const tag = `        <Script async src="${GATEWAY_URL(token)}"></Script>`;
+    const tag = `        <Script src="${GATEWAY_URL(token)}" strategy="beforeInteractive"></Script>`;
     if (/<\/body>/i.test(content)) {
       content = content.replace(/([ \t]*)<\/body>/i, `${tag}\n$1</body>`);
     } else if (/<NextScript\s*\/>/i.test(content)) {
@@ -528,7 +534,7 @@ export function injectConsentify(
           },
         ];
       }
-      return [injectIntoHtml(abs(entryFiles[0]), token, "body")];
+      return [injectIntoHtml(abs(entryFiles[0]), token, "head")];
     }
     case "astro": {
       if (!entryFiles.length) {
@@ -579,7 +585,7 @@ export function injectConsentify(
           },
         ];
       }
-      return [injectIntoHtml(abs(entryFiles[0]), token, "body")];
+      return [injectIntoHtml(abs(entryFiles[0]), token, "head")];
     }
     default:
       return [
@@ -591,3 +597,5 @@ export function injectConsentify(
       ];
   }
 }
+
+export { rewriteEmbedsInFile } from "./embeds.js";
